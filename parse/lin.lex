@@ -58,7 +58,6 @@ ws = [\ \t];
 <INITIAL> "split"  => (Tokens.SPLIT(!pos,!pos));
 <INITIAL> "fst"    => (Tokens.FST(!pos,!pos));
 <INITIAL> "snd"    => (Tokens.SND(!pos,!pos));
-<INITIAL> "all"    => (Tokens.ALL(!pos,!pos));
 <INITIAL> "with"   => (Tokens.WITH(!pos,!pos));
 <INITIAL> "as"     => (Tokens.AS(!pos,!pos));
 <INITIAL> "in"     => (Tokens.IN(!pos,!pos));

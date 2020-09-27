@@ -223,6 +223,15 @@ val Split (Tuple (Lin,Zero Un,Zero Un),"x","y",Var ("x",1))
 val Split (Tuple (Lin,Zero Un,Zero Un),"x","y",Var ("y",0))
     = parse "split lin (un Z, un Z) as x, y in y"
 
+val Let ("x",Type (Un,Nat),Zero Un,Var ("x",0)) : Ast.Exp =
+    parse "let x : un nat = un Z in x";
+
+val Let ("x",Type (Lin,Nat),Zero Lin,Var ("x",0)) : Ast.Exp =
+    parse "let x : lin nat = lin Z in x";
+
+val Lam (Lin,"x",Type (Lin,Nat),Var ("x",0)) : Ast.Exp =
+    parse "lin \\ x : lin nat = x";
+
 in () end
 
 end (* structure Lin *)

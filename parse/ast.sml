@@ -19,7 +19,6 @@ sig
       | Let of string * Typ (*vartype*) * Exp (*varval*) * Exp (*varscope*)
       | App of Exp * Exp
       | Fix of string (*x*) * Typ (*: t*) * Exp (*x's scope*)
-      | TypAbs of string * Exp (* binds type variable *)
       | Ifz of Exp * Exp * string * Exp
       | TypApp of Typ * Exp
       | Tuple of Qual * Exp * Exp
@@ -49,7 +48,6 @@ struct
       | Let of string * Typ (*vartype*) * Exp (*varval*) * Exp (*varscope*)
       | App of Exp * Exp
       | Fix of string (*x*) * Typ (*: t*) * Exp (*x's scope*)
-      | TypAbs of string * Exp (* binds type variable *)
       | Ifz of Exp * Exp * string * Exp
       | TypApp of Typ * Exp
       | Tuple of Qual * Exp * Exp
