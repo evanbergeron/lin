@@ -15,14 +15,15 @@ sig
         Zero of Qual
       | Var of string * int (* idx into ctx *)
       | Succ of Exp
-      | Lam of string * Typ (*argType*) * Exp (*funcBody*)
+      | Lam of Qual * string * Typ (*argType*) * Exp (*funcBody*)
       | Let of string * Typ (*vartype*) * Exp (*varval*) * Exp (*varscope*)
       | App of Exp * Exp
       | Fix of string (*x*) * Typ (*: t*) * Exp (*x's scope*)
       | TypAbs of string * Exp (* binds type variable *)
       | Ifz of Exp * Exp * string * Exp
       | TypApp of Typ * Exp
-      | Tuple of Exp * Exp
+      | Tuple of Qual * Exp * Exp
+      | Split of Exp * string * string * Exp
       | ProdLeft of Exp
       | ProdRight of Exp
 
@@ -44,15 +45,15 @@ struct
         Zero of Qual
       | Var of string * int (* idx into ctx *)
       | Succ of Exp
-      | Lam of string * Typ (*argType*) * Exp (*funcBody*)
+      | Lam of Qual * string * Typ (*argType*) * Exp (*funcBody*)
       | Let of string * Typ (*vartype*) * Exp (*varval*) * Exp (*varscope*)
       | App of Exp * Exp
       | Fix of string (*x*) * Typ (*: t*) * Exp (*x's scope*)
       | TypAbs of string * Exp (* binds type variable *)
       | Ifz of Exp * Exp * string * Exp
       | TypApp of Typ * Exp
-      | Tuple of Exp * Exp
-      (* Elimination forms for terms of Prod type *)
+      | Tuple of Qual * Exp * Exp
+      | Split of Exp * string * string * Exp
       | ProdLeft of Exp
       | ProdRight of Exp
 

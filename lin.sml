@@ -36,36 +36,38 @@ fun substTypeInExp' srcType dstExp bindingDepth =
     case dstExp
      of  A.Zero qual => A.Zero qual
        | A.Var (name, i) => A.Var (name, i)
-       | A.Succ e2 => A.Succ (substTypeInExp' srcType e2 bindingDepth)
-       | A.ProdLeft e => A.ProdLeft (substTypeInExp' srcType e bindingDepth)
-       | A.ProdRight e => A.ProdRight (substTypeInExp' srcType e bindingDepth)
-       | A.Lam (argName, argType, funcBody) =>
-            A.Lam(argName, (substType' srcType argType bindingDepth),
-                substTypeInExp' srcType funcBody bindingDepth)
+       | A.Succ e2 =>
+         A.Succ (substTypeInExp' srcType e2 bindingDepth)
+       | A.ProdLeft e =>
+         A.ProdLeft (substTypeInExp' srcType e bindingDepth)
+       | A.ProdRight e =>
+         A.ProdRight (substTypeInExp' srcType e bindingDepth)
+       | A.Lam (qual, argName, argType, funcBody) =>
+         A.Lam(qual, argName, (substType' srcType argType bindingDepth),
+               substTypeInExp' srcType funcBody bindingDepth)
        | A.Let (varname, vartype, varval, varscope) =>
-            A.Let(varname, (substType' srcType vartype bindingDepth),
-                  substTypeInExp' srcType varval bindingDepth,
-                  substTypeInExp' srcType varscope bindingDepth
-                 )
+         A.Let(varname, (substType' srcType vartype bindingDepth),
+               substTypeInExp' srcType varval bindingDepth,
+               substTypeInExp' srcType varscope bindingDepth
+              )
+       | A.Split(e, lname, rname, scope) =>
+         A.Split(e, lname, rname,
+                 substTypeInExp' srcType scope bindingDepth)
        | A.App (f, n) =>
-            A.App (substTypeInExp' srcType f bindingDepth,
-                 substTypeInExp' srcType n bindingDepth)
+         A.App (substTypeInExp' srcType f bindingDepth,
+                substTypeInExp' srcType n bindingDepth)
        | A.Ifz (i, t, prev, e) =>
-            A.Ifz(substTypeInExp' srcType i bindingDepth,
-                  substTypeInExp' srcType t bindingDepth,
-                  prev,
-                  substTypeInExp' srcType e bindingDepth)
-       | A.Tuple (l, r) =>
-            A.Tuple (substTypeInExp' srcType l bindingDepth,
-                   substTypeInExp' srcType r bindingDepth)
+         A.Ifz(substTypeInExp' srcType i bindingDepth,
+               substTypeInExp' srcType t bindingDepth,
+               prev,
+               substTypeInExp' srcType e bindingDepth)
+       | A.Tuple (qual, l, r) =>
+         A.Tuple (qual, substTypeInExp' srcType l bindingDepth,
+                  substTypeInExp' srcType r bindingDepth)
        | A.Fix (name, t, e) =>
          A.Fix(name,
                substType' srcType t bindingDepth,
                substTypeInExp' srcType e bindingDepth)
-       | A.TypAbs (name, e) => A.TypAbs(name, substTypeInExp' srcType e (bindingDepth+1)) (* binds type var *)
-       | A.TypApp (appType, e) =>
-            A.TypApp(substType' srcType appType bindingDepth,
-                   substTypeInExp' srcType e bindingDepth)
 
 fun setDeBruijnIndexInType t varnames typnames = t
 
@@ -81,8 +83,8 @@ fun setDeBruijnIndex e varnames typnames =
          (case find n varnames of
              NONE => (print ("unknown var: "^ n); raise VarNotInContext)
            | SOME i => A.Var (n, i))
-       | A.Lam(name, argType, funcBody) =>
-         A.Lam(name,
+       | A.Lam(qual, name, argType, funcBody) =>
+         A.Lam(qual, name,
                setDeBruijnIndexInType argType varnames typnames,
                setDeBruijnIndex funcBody (name::varnames) typnames)
        | A.Let (varname, vartype, varval, varscope) =>
@@ -90,6 +92,9 @@ fun setDeBruijnIndex e varnames typnames =
                setDeBruijnIndexInType vartype varnames typnames,
                (setDeBruijnIndex varval (varnames) typnames),
                setDeBruijnIndex varscope (varname::varnames) typnames)
+       | A.Split(e, lname, rname, scope) =>
+         A.Split(e, lname, rname,
+                 setDeBruijnIndex scope (rname::(lname::varnames)) typnames)
        | A.Succ e2 => A.Succ (setDeBruijnIndex e2 varnames typnames)
        | A.ProdLeft e => A.ProdLeft (setDeBruijnIndex e varnames typnames)
        | A.ProdRight e => A.ProdRight (setDeBruijnIndex e varnames typnames)
@@ -99,16 +104,12 @@ fun setDeBruijnIndex e varnames typnames =
                                    setDeBruijnIndex t varnames typnames,
                                    prev,
                                    setDeBruijnIndex e (prev::varnames) typnames)
-       | A.Tuple (l, r) => A.Tuple (setDeBruijnIndex l varnames typnames,
+       | A.Tuple (qual, l, r) => A.Tuple (qual, setDeBruijnIndex l varnames typnames,
                                     setDeBruijnIndex r varnames typnames)
        | A.Fix(name, t, e) =>
          A.Fix(name,
                setDeBruijnIndexInType t varnames typnames,
                setDeBruijnIndex e (name::varnames) typnames)
-       | A.TypApp (appType, e) =>
-            A.TypApp (setDeBruijnIndexInType appType varnames typnames,
-                      setDeBruijnIndex e varnames typnames)
-       | A.TypAbs (name, e) => A.TypAbs (name, setDeBruijnIndex e varnames (name::typnames))
 end
 
 
@@ -123,10 +124,9 @@ fun isval e =
     case e of
         A.Zero qual => true
       | A.Succ(n) => isval n
-      | A.Lam(_, _, _) => true
+      | A.Lam(_, _, _, _) => true
       | A.Let(_, _, _, _) => false
-      | A.Tuple(l, r) => (isval l) andalso (isval r)
-      | A.TypAbs (_, _)  => true
+      | A.Tuple(q, l, r) => (isval l) andalso (isval r)
       | _ => false
 
 fun subst' src dst bindingDepth =
@@ -138,12 +138,15 @@ fun subst' src dst bindingDepth =
        | A.Succ e2 => A.Succ (subst' src e2 bindingDepth)
        | A.ProdLeft e => A.ProdLeft (subst' src e bindingDepth)
        | A.ProdRight e => A.ProdRight (subst' src e bindingDepth)
-       | A.Lam (argName, t, f) => A.Lam(argName, t, (subst' src f (bindingDepth+1)))
+       | A.Lam (qual, argName, t, f) => A.Lam(qual, argName, t, (subst' src f (bindingDepth+1)))
        | A.Let (varname, vartype, varval, varscope) =>
             A.Let(varname,
                   vartype,
                   (subst' src varval (bindingDepth)),
                   (subst' src varscope (bindingDepth+1)))
+       | A.Split(e, lname, rname, scope) =>
+         A.Split(subst' src e bindingDepth, lname, rname,
+                 subst' src scope (bindingDepth+2))
        | A.App (f, n) => A.App((subst' src f bindingDepth), (subst' src n bindingDepth))
        | A.Ifz (i, t, prev, e) => A.Ifz(subst' src i bindingDepth,
                                   subst' src t bindingDepth,
@@ -151,9 +154,7 @@ fun subst' src dst bindingDepth =
                                   subst' src e (bindingDepth+1)) (* binds *)
        | A.Fix (name, t, e) =>
          A.Fix(name, t, subst' src e (bindingDepth+1)) (* binds *)
-       | A.TypAbs (name, e) => A.TypAbs (name, subst' src e bindingDepth) (* abstracts over types, not exps *)
-       | A.TypApp (appType, e) => A.TypApp(appType, subst' src e bindingDepth)
-       | A.Tuple (l, r) => A.Tuple (subst' src l bindingDepth, subst' src r bindingDepth)
+       | A.Tuple (qual, l, r) => A.Tuple (qual, subst' src l bindingDepth, subst' src r bindingDepth)
 
 
 fun subst src dst = subst' src dst 0
@@ -165,15 +166,15 @@ fun step e =
     case e of
         A.Succ(n) => if not (isval n) then A.Succ(step n) else e
       | A.ProdLeft n  => if not (isval n) then A.ProdLeft(step n) else
-                   let val A.Tuple(l, r) = n in l end
+                   let val A.Tuple(qual, l, r) = n in l end
       | A.ProdRight n  => if not (isval n) then A.ProdRight(step n) else
-                    let val A.Tuple(l, r) = n in r end
-      | A.Tuple(l, r) => if not (isval l) then A.Tuple(step l, r) else
-                       if not (isval r) then A.Tuple(l, step r) else
+                    let val A.Tuple(qual, l, r) = n in r end
+      | A.Tuple(qual, l, r) => if not (isval l) then A.Tuple(qual, step l, r) else
+                       if not (isval r) then A.Tuple(qual, l, step r) else
                        e
       | A.App(f, n) => if not (isval f) then A.App(step f, n)
                      else (if not (isval n) then A.App(f, step n)
-                           else let val A.Lam(argName, t, f') = f
+                           else let val A.Lam(qual, argName, t, f') = f
                            in
                                (* plug `n` into `f'` *)
                                subst n f'
@@ -188,13 +189,6 @@ fun step e =
       | A.Let (varname, vartype, varval, varscope) => subst varval varscope
       | A.Var (name, x) => (if x < 0 then raise VarNotInContext else A.Var (name, x))
       | A.Fix(name, t, body) => subst e body
-      | A.TypAbs (name, e') => raise No (* Already isval *)
-      | A.TypApp (t, e') =>
-            if not (isval e') then (A.TypApp (t, step e'))
-            else
-                let val A.TypAbs(name, e'') = e' in
-                    substTypeInExp t e''
-                end
       | _ => if (isval e) then e else raise No
     end
 
@@ -219,7 +213,16 @@ fun test() = let
 open A;
 val Zero Lin = parse "lin Z";
 val Zero Un = parse "un Z";
-val Zero Un = parse "Z";
+
+val Tuple (Lin,Zero Un,Zero Un) : Ast.Exp = parse "lin (un Z, un Z)";
+val Tuple (Un,Zero Un,Zero Un) : Ast.Exp = parse "un (un Z, un Z)";
+
+val Split (Tuple (Lin,Zero Un,Zero Un),"x","y",Var ("x",1))
+    = parse "split lin (un Z, un Z) as x, y in x"
+
+val Split (Tuple (Lin,Zero Un,Zero Un),"x","y",Var ("y",0))
+    = parse "split lin (un Z, un Z) as x, y in y"
+
 in () end
 
 end (* structure Lin *)
