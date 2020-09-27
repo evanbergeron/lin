@@ -35,10 +35,12 @@ structure A = Ast
  | FIX
  | FUN
  | LIN
+ | UN
 
 %nonterm
    exp of A.Exp
  | typ of A.Typ
+ | qual of A.Qual
  | pretyp of A.PreType
  | program of A.Exp
 
@@ -52,7 +54,7 @@ structure A = Ast
 (* Each rule is then assigned the precedence of its rightmost terminal *)
 (* If the rule has the higher precedence, the reduction is chosen. *)
 (* The precedence grows down *)
-%nonassoc EOF ZERO SUCC LPAREN RPAREN PIPE LAM COLON NAT IDX ID POLY COMMA STAR FST SND ALL DOT WITH AS IN OF LET EQ IFZ FIX FUN LIN
+%nonassoc EOF ZERO SUCC LPAREN RPAREN PIPE LAM COLON NAT IDX ID POLY COMMA STAR FST SND ALL DOT WITH AS IN OF LET EQ IFZ FIX FUN LIN UN
 %right SARROW
 %nonassoc APP (* Deliberately last *)
 
@@ -63,7 +65,7 @@ exp:
   | exp exp %prec APP (A.App(exp1, exp2))
   | exp typ %prec APP (A.TypApp(typ, exp))
   | ID (A.Var (ID, ~1))
-  | ZERO (A.Zero)
+  | qual ZERO (A.Zero qual)
   | SUCC exp (A.Succ exp)
   | LAM ID COLON typ SARROW exp (A.Lam (ID, typ, exp))
   | LET ID COLON typ EQ exp IN exp (A.Let (ID, typ, exp1, exp2))
@@ -75,6 +77,11 @@ exp:
   | FST exp (A.ProdLeft exp)
   | SND exp (A.ProdRight exp)
 
+qual:
+    LIN (A.Lin)
+  | UN (A.Un)
+  | (A.Un)
+
 typ:
     LIN pretyp (A.Type(A.Lin, pretyp))
   | pretyp (A.Type(A.Un, pretyp))
@@ -84,5 +91,5 @@ pretyp:
   | pretyp SARROW pretyp (A.Arr(pretyp1, pretyp2))
   | pretyp STAR pretyp (A.Prod(pretyp1, pretyp2))
   | LPAREN pretyp RPAREN (pretyp)
-  | ID (A.TypVarName ID) 
+  | ID (A.TypVarName ID)
   | ALL ID DOT pretyp (A.All (ID, pretyp))

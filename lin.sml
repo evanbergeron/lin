@@ -1,5 +1,6 @@
 (* lin - a small functional language *)
 structure Lin : sig
+                   val test : unit -> unit
                    val parse : string -> Ast.Exp
                    val parseFile : string -> Ast.Exp
                    val typeof : A.Exp -> A.Typ
@@ -33,7 +34,7 @@ fun decrDeBruijinIndices t = t
 
 fun substTypeInExp' srcType dstExp bindingDepth =
     case dstExp
-     of  A.Zero => A.Zero
+     of  A.Zero qual => A.Zero qual
        | A.Var (name, i) => A.Var (name, i)
        | A.Succ e2 => A.Succ (substTypeInExp' srcType e2 bindingDepth)
        | A.ProdLeft e => A.ProdLeft (substTypeInExp' srcType e bindingDepth)
@@ -75,7 +76,7 @@ fun setDeBruijnIndex e varnames typnames =
           | SOME (i, _) => SOME i)
     in
     case e
-     of  A.Zero => e
+     of  A.Zero qual => e
        | A.Var (n, i) =>
          (case find n varnames of
              NONE => (print ("unknown var: "^ n); raise VarNotInContext)
@@ -120,7 +121,7 @@ fun typeof e = typeof' [] [] e
 
 fun isval e =
     case e of
-        A.Zero => true
+        A.Zero qual => true
       | A.Succ(n) => isval n
       | A.Lam(_, _, _) => true
       | A.Let(_, _, _, _) => false
@@ -130,7 +131,7 @@ fun isval e =
 
 fun subst' src dst bindingDepth =
     case dst
-     of  A.Zero => A.Zero
+     of  A.Zero qual => A.Zero qual
        | A.Var (name, n)  => if n = bindingDepth then src else
                    if n > bindingDepth then A.Var(name, n-1) else
                    A.Var(name, n)
@@ -181,7 +182,7 @@ fun step e =
       | A.Ifz(i, t, prev, e) =>
             if not (isval i) then A.Ifz(step i, t, prev, e)
             else (case i of
-                      A.Zero => t
+                      A.Zero qual => t
                     | A.Succ i' => subst i' e
                     | _ => raise IllTypedMsg "ifz conditional must be an integer")
       | A.Let (varname, vartype, varval, varscope) => subst varval varscope
@@ -213,5 +214,12 @@ fun parseFile filename =
 fun eval e = if isval e then e else eval (step e)
 fun run s = let val e = parse s in if isval e then e else eval (step e) end
 fun runFile s = let val e = parseFile s in if isval e then e else eval (step e) end
+
+fun test() = let
+open A;
+val Zero Lin = parse "lin Z";
+val Zero Un = parse "un Z";
+val Zero Un = parse "Z";
+in () end
 
 end (* structure Lin *)

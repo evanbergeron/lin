@@ -52,6 +52,7 @@ ws = [\ \t];
 <INITIAL> "ifz"    => (Tokens.IFZ(!pos,!pos));
 <INITIAL> "fun"    => (Tokens.FUN(!pos,!pos));
 <INITIAL> "lin"    => (Tokens.LIN(!pos,!pos));
+<INITIAL> "un"     => (Tokens.UN(!pos,!pos));
 <INITIAL> "->"     => (Tokens.SARROW(!pos,!pos));
 <INITIAL> "nat"    => (Tokens.NAT(!pos,!pos));
 <INITIAL> "poly"   => (Tokens.POLY(!pos,!pos));

@@ -12,7 +12,7 @@ sig
     datatype Typ = Type of Qual * PreType
 
     datatype Exp =
-        Zero
+        Zero of Qual
       | Var of string * int (* idx into ctx *)
       | Succ of Exp
       | Lam of string * Typ (*argType*) * Exp (*funcBody*)
@@ -41,7 +41,7 @@ struct
     datatype Typ = Type of Qual * PreType
 
     datatype Exp =
-        Zero
+        Zero of Qual
       | Var of string * int (* idx into ctx *)
       | Succ of Exp
       | Lam of string * Typ (*argType*) * Exp (*funcBody*)
