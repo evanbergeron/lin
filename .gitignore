@@ -1,0 +1,8 @@
+\#*
+*~
+.cm/*
+parse/.cm/*
+*.grm.desc
+*.grm.sig
+*.grm.sml
+*.lex.sml

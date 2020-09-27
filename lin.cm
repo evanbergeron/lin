@@ -1,0 +1,15 @@
+Group is
+
+#if defined (NEW_CM)
+  $/basis.cm
+  $/smlnj-lib.cm
+  $/ml-yacc-lib.cm
+#else
+  ml-yacc-lib.cm
+#endif
+
+  parse/ast.sml
+  parse/lin.grm
+  parse/lin.lex
+  parse/parse.sml
+  lin.sml
